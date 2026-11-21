@@ -3,12 +3,19 @@
 Scope: `pc5ctl usb --iso … --device /dev/sdX --yes`, which copies an image to a
 removable disk with `dd`. All work here is synthetic: no block device was
 opened, no destructive write was performed, and nothing in this file is
-hardware validation. Status: the correction exists in the working tree of
-`arena/c8a76776-pc5` **uncommitted**, plus `evidence/identity-boundary-v1/USB-identity-boundary-correction-v2.patch`
-(the apply-verified pair, with `USB-cli-boundaries-fd-update-v2.diff`; the `-v1` files are retained
-unchanged and superseded)
-(verified to apply cleanly to a fresh `git archive HEAD` export). It is a
-proposal for independent review; USB acceptance remains **BLOCKED**.
+hardware validation.
+
+**Status now: implemented and merged.** Descriptor binding is in `main` as of
+PR #35, merge commit `52f682c8435956c8210b3189cad23ebea973d2de` — see §8, which
+is the authority for the current state. The paragraph below is retained as the
+status *as authored on 2026-11-21*, before that PR, because §1–§7 analyse the
+pre-remediation code and the review that led to it; it does not describe `main`.
+
+> Status at authoring time: the correction exists in the working tree of
+> `arena/c8a76776-pc5` **uncommitted**, plus `evidence/identity-boundary-v1/USB-identity-boundary-correction-v2.patch`
+> (the apply-verified pair, with `USB-cli-boundaries-fd-update-v2.diff`; the `-v1` files are retained
+> unchanged and superseded) (verified to apply cleanly to a fresh `git archive HEAD` export). It is a
+> proposal for independent review; USB acceptance remains **BLOCKED**.
 
 ## 1. The production path, step by step
 
@@ -173,6 +180,13 @@ atomicity: impossible in userspace, documented rather than claimed. Physical
 validation: not performed. Therefore the USB milestone stays BLOCKED, and this
 correction needs an independent review before it is applied to any branch.
 
+*Both halves of that sentence were later discharged, in that order and no further:
+the independent review is `evidence/usb-descriptor-independent-review-v1/`, and the
+review's §10 conditions were met before the branch was opened. Neither the review
+nor the merge changed the last two: topology atomicity stays impossible in userspace,
+and physical validation has still not been performed. §8 states where that leaves
+acceptance now.*
+
 ## Composition against the pushed branch tip
 
 In a disposable clone at `ae9f3e25f66ac3d31b2b7b64dccef7695fef1d73` (the current remote tip of
@@ -225,3 +239,49 @@ instead denies reads on `devices/sda/sda1/holders` (and `…/slaves`), which onl
 the answer is `[]`, the closure completes, and `dd` is launched — the cases fail, which is the
 property the review asked to be pinned. Its control case asserts the same fixture writes when
 nothing is unreadable, so the refusal cannot be overdetermined again by accident.
+
+## 8. Current status, recorded after the merge (2026-11-21)
+
+Appended by `docs/usb-post-merge-reconciliation`; §1–§7 above are unedited history.
+
+* **Implemented and merged.** The descriptor-bound remediation is in `main`:
+  PR #35 (`https://github.com/SpicyBadran/PC5/pull/35`), merge commit
+  `52f682c8435956c8210b3189cad23ebea973d2de`, branch head `80fc8615283173fd820d26c5779ad0cb94047736`,
+  four commits on base `56c58521580e88c4339ceb6eb40ce724a2bb533b`. §3's "correction
+  (option D) as implemented" is therefore a description of shipped code, not a proposal.
+* **Independently reviewed, in the repository's own record.** The adversarial review is
+  `evidence/usb-descriptor-independent-review-v1/INDEPENDENT-REVIEW-20261121.md`
+  (findings F-1…F-10); the disposition of every one of them, with the command that
+  reproduces each and the measured result, is
+  `evidence/usb-descriptor-remediation-v2/FINDINGS-DISPOSITION-20261121.md`. Two claims of
+  the review were overturned by measurement and are recorded as overturned
+  (`FINDINGS-CLOSURE-20261121.md`), including the first description of F-6's mechanism.
+* **Tests and mutation verification are documented evidence, not hardware evidence.**
+  95 USB cases (`test_pc5ctl_usb_safety.py` 56, `test_pc5ctl_usb_descriptor_identity.py` 27,
+  `test_pc5ctl_usb_cli_boundaries.py` 8, `test_pc5ctl_usb_topology_unknown.py` 4) and three
+  mutation harnesses (`usb-descriptor-remediation-v1/mutation_harness.py`,
+  `usb-descriptor-remediation-v2/mutation_harness_v2.py`,
+  `identity-boundary-v1/usb_identity_mutations.py`). `make check` on a fresh clone of `main`
+  after the merge: `Ran 929 … OK (skipped=2)`, exit 0. Every one of those cases runs against
+  temporary regular files and a synthetic `/sys/dev/block` tree.
+* **F-8 remains open, disposition unchanged:** the *root* side of the decision resolves the
+  `/proc/mounts` source **name** when `/proc/self/mountinfo` is unreadable, so the protected
+  set can follow a retargeted name. §7 keeps the mechanism, the two candidate fixes and the
+  reason neither was bundled into a remediation PR. It fails closed when the name cannot be
+  resolved, and `test_a_retargeted_root_node_would_move_the_boundary` passes precisely
+  because the residual is real.
+* **F-9 remains open, disposition unchanged:** an unexpected exception escaping a
+  *post-decision* topology read surfaces as a traceback instead of the `nothing was written`
+  line. It fails closed — nothing launched, nothing written, non-zero exit — and was left
+  alone deliberately because wrapping it would remove the diagnostic that says the guard was
+  reached. Reporting quality, not a safety property.
+* **Physical-device validation has not occurred.** No block device node exists in this
+  environment and `mknod` is denied, so no test, no mutation harness and no green total has
+  ever touched media. The evidence that the guard decides correctly is complete; the evidence
+  that a real stick, a real firmware and a real `dd` behave as modelled does not exist.
+* **USB deployment therefore remains blocked**, pending physical-device validation and
+  explicit authorisation. Merging PR #35 authorised the *code in the tree*; it did not
+  authorise writing an image to hardware, and nothing in §8 should be read as that. A
+  follow-up record of the post-merge reconciliation — including why GitHub's 111 changed
+  files and PR #35's first completion note of 103 are both correct, for different trees — is
+  `evidence/usb-descriptor-remediation-v2/POST-MERGE-RECONCILIATION-20261122.md`.

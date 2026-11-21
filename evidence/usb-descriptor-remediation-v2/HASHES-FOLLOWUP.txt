@@ -1,0 +1,117 @@
+Artifact identities — follow-up reconciliation of PR #35, branch `docs/usb-post-merge-reconciliation`.
+
+Generated 2026-11-21T23:38:20Z by measurement from the staged tree, after every file it records existed.
+
+Why a new manifest instead of regenerating the ones that exist:
+  `HASHES-PR-TIP.txt` and `CORRECTED-MANIFEST.txt` describe `main` at PR #35's tip
+  (`52f682c84359…`). This branch edits two of the files they record, so those two records
+  now fail — reported in `POST-MERGE-RECONCILIATION-20261122.md` §6 and in section D below,
+  with old and new identities. Rewriting the historical manifests to make that check
+  disappear would be the exact defect finding F-2 was about, so the correction is additive:
+  this file covers the follow-up and the older files stay byte-identical.
+
+Scope, stated because a manifest whose scope is inferred is how F-2 began:
+  (1) every path this branch adds or modifies — 5 paths, section A (the one
+      path this branch *removes* is section C, because it has no bytes on disk to hash);
+  (2) the complete `evidence/usb-descriptor-remediation-v2/` file set as it stands in this
+      branch — 52 files, section B — the package whose self-claims are corrected here;
+  (3) `evidence/usb-descriptor-remediation-v2/HASHES-FOLLOWUP.txt` is excluded: a manifest never records itself;
+  (4) bytecode is out of scope by rule, not by omission — section C;
+  (5) authentication from outside: the commit that lands this branch carries
+      `Evidence-Manifest-Sha256:` naming these bytes, and the PR record is outside the tree.
+
+Verify from the repository root of a clone of this branch (mawk has no {64} intervals):
+    awk 'NF==3 && length($3)==64 {print $3"  "$1}' evidence/usb-descriptor-remediation-v2/HASHES-FOLLOWUP.txt | sha256sum -c -
+The historical manifests are verified the same way from the same directory; their 2 failures
+each are the drift named in section D, not damage.
+
+=== A — paths this branch adds or modifies ===
+docs/INSTALLATION.md 11326 9661c06032f730bd5be6b1d9cdd6cf6bbec8ce6b9b8e9435069d4287655f2885
+docs/engineering/USB-IDENTITY-BOUNDARY-DESIGN-v1.md 19886 af1392c7c6529e611d93acf8e4660bd7a70757572252ce9b46e98004f7d10ccd
+# evidence/usb-descriptor-remediation-v2/HASHES-FOLLOWUP.txt excluded: a manifest cannot record itself
+evidence/usb-descriptor-remediation-v2/POST-MERGE-RECONCILIATION-20261122.md 21698 5c9db8104c650093e5533d5048a8ab450c2a5351c3b2fe05cae290eed8b86858
+tests/test_repository_hygiene.py 6030 bdfd2f5f4e74b9121a359f63cf24777e6ccecb8fb7b528f18ee2b52fd5dbff52
+
+=== B — the v2 evidence package at this branch ===
+evidence/usb-descriptor-remediation-v2/CORRECTED-MANIFEST.txt 22410 58c2ca6f940e351e037ac6514c56753e069433d5cb69c0ada3126ef3b7675c71
+evidence/usb-descriptor-remediation-v2/FINDINGS-CLOSURE-20261121.md 24876 fea6896b0ddcf898412e9c0a20711c5181a72c3de77f5e93e3733a6bfd5df67d
+evidence/usb-descriptor-remediation-v2/FINDINGS-DISPOSITION-20261121.md 8504 d81a7e792474a3441ca39f4ae56f12c031fdcde69b7db256d4312d57e10268e7
+evidence/usb-descriptor-remediation-v2/HASHES-PR-TIP.txt 16427 80f3c26190cb66c4a2815fb611411db86f93fbcf31fff775bcbf87c661f27313
+evidence/usb-descriptor-remediation-v2/HASHES.txt 5935 3f0e56a28912cc33817c8bad51e2f19373876510e85de29c19cca4c471345cab
+evidence/usb-descriptor-remediation-v2/POST-MERGE-RECONCILIATION-20261122.md 21698 5c9db8104c650093e5533d5048a8ab450c2a5351c3b2fe05cae290eed8b86858
+evidence/usb-descriptor-remediation-v2/PR-BODY.md 13542 14219b640d6a2b46b5f5bcdcb8c2c60d69ac5b377a6497c036be3e6f268e27a8
+evidence/usb-descriptor-remediation-v2/README.md 4703 c2bdc65d73c0c7824bb81a24f869cffb81b8b38e2089fc0845fc579744be42ca
+evidence/usb-descriptor-remediation-v2/TIMESTAMP-RECONCILIATION.md 5713 92061f3082a9fbe506b5cb359d25461dd0edc5073c4d5da4cc45169deed6a96a
+evidence/usb-descriptor-remediation-v2/USB-PR-35.patch 2560207 2b3cefb81583168647c2206a68ed10078c7118907bff123b1c055f20b7ab3b10
+evidence/usb-descriptor-remediation-v2/USB-PR-35.patch.sha256 82 62fc21a65429c993bdaa68966aee0c87268de087fde687829ff7d20fdfe0b759
+evidence/usb-descriptor-remediation-v2/USB-REMEDIATION-v2.patch 100588 e1dae862d0d01af8674243f4e77a000f04f051f598405f506c6bcd539f234002
+evidence/usb-descriptor-remediation-v2/USB-REMEDIATION-v2.patch.sha256 130 3624769f5019de55560834a73292a1d84fbbfd1210d4eef48cb1fbfad34ecf52
+evidence/usb-descriptor-remediation-v2/logs/00-CAPTURE-TIME.txt 43 4b30801d1b5e54c299482e7dd03fd619b3671fef60f24db63b3a71148fb21c9b
+evidence/usb-descriptor-remediation-v2/logs/02-make-check-patched-no-provisioning.txt 155487 bcc638f57341198912662d268395abd77af6b4bb054beee69af002c26722510f
+evidence/usb-descriptor-remediation-v2/logs/03-make-check-patched-with-provisioning.txt 148007 6190893fb67448e70b237648b1a436f3d440fb2164c1f2d66ac5ad28596b0b4b
+evidence/usb-descriptor-remediation-v2/logs/04-mutation-harness-9.txt 6532 3f8d95e0269579bda097b4fd43ef819d57ebc8b5ac7d57cba031342de7a3d36e
+evidence/usb-descriptor-remediation-v2/logs/05-usb-suite-91.txt 5940 7a297ecc4b7b237b966c1b84478d861d10004bd4209a0654168309eba689e26a
+evidence/usb-descriptor-remediation-v2/logs/06-make-check-BASE-clean-clone.txt 141212 9d41ca3d26aafa8e72b0a102ce8579bf08decd2bac4e2308ff15215b39bf7046
+evidence/usb-descriptor-remediation-v2/logs/07-unittest-BASE-no-unicorn.txt 127168 0e2a7f2909126b9f1c938aae5c1f490f3b6a8ef718bf80bbc2d5285d6a05b739
+evidence/usb-descriptor-remediation-v2/logs/08-cli-boundaries-standalone.txt 106 1327f170732ee47f216ae8aa32ed702ca689d7d7ecc0a8c9e1ed4592ceb31670
+evidence/usb-descriptor-remediation-v2/logs/09-pip-install-requirements-harness.txt 198 2b43028dd7b89526f6a920d462020bcc5da775645085f6d5d8a7ef6236e8bd25
+evidence/usb-descriptor-remediation-v2/logs/10-prior-8-mutants-vs-PRIOR-87-tests.txt 5098 7e57f90124d430360512aa2b5039afdeaea57ad7275431864bd1c2b6b3a13daa
+evidence/usb-descriptor-remediation-v2/logs/12-citation-refs-on-fresh-clone.txt 907 13061c96554c96b9eb9cbb3df2b6e7a9fce4f3cf46e6219e9ab3af25427d6408
+evidence/usb-descriptor-remediation-v2/logs/12b-citation-refs-target-absent-at-BASE.txt 584 31d3fc17873db0c1df44af73d0ad4951a4778f5abd9792f6cb6a7fdc0704ad92
+evidence/usb-descriptor-remediation-v2/logs/13-shallow-clone-guidance.txt 1309 97376ccb2fb0765a6929966561d648ad5ca819b11c859de82130494004fbc806
+evidence/usb-descriptor-remediation-v2/logs/14-final-A1-make-check-no-provisioning.txt 155741 023751c17711c314732fbb97cdf561dce59879f67897282b7a37d40c3ffd8b76
+evidence/usb-descriptor-remediation-v2/logs/15-final-usb-suite-91.txt 5940 287f595244e4f5271827f890aa2f1327f2f06b341174847f8d10ff930f72d1e1
+evidence/usb-descriptor-remediation-v2/logs/16-final-A2-make-check-provisioned.txt 148261 642358eec6f2d6e6e6682c1feb06d1457267cc6f15211b065f344ca8f14a540b
+evidence/usb-descriptor-remediation-v2/logs/17-final-mutation-harness-9.txt 6532 7500797ff0a442c9949601076177003b1e4535d2c7a89b3efee71478f9824190
+evidence/usb-descriptor-remediation-v2/logs/18-final-prior-87-suite.txt 8257 5abeb392dd554f3edacdfeb719d6f5e7c7892a3e9e6f8e786ea7caa42f2982fc
+evidence/usb-descriptor-remediation-v2/logs/18a-final-prior-87-provenance.txt 752 c2421e5e5b75ef3621c6f9802d1dd69a6515a348e8aafc51924581815a56b381
+evidence/usb-descriptor-remediation-v2/logs/19-final-prior-8-mutants-vs-87.txt 5094 8ecf8e624db5c0ed500e38ea613c5ca325d6175404ffc385a4756103e6c1bd5f
+evidence/usb-descriptor-remediation-v2/logs/20-prior-8-mutants-vs-CURRENT-91.txt 5122 60d9296a3f10bf8f55f20a41a9d6457fc45760d7894d3e3d085e848f621e623e
+evidence/usb-descriptor-remediation-v2/logs/21-evidence-audit-rerun.txt 9504 d108ae3b40745d9d3587873a9491981fdf4111a5625a47ec44b879ec7946067f
+evidence/usb-descriptor-remediation-v2/logs/22-manifest-verification-final.txt 2339 8ba09029988f408b6fc0f8480233a0d316f58ae24e533439d99fd1e7262359dc
+evidence/usb-descriptor-remediation-v2/logs/23-final-workspace-gates.txt 1738 585f1c477bf641c6f615ca5a09300022fda6fc5f9e1871ff5ddfca96d5fcbf66
+evidence/usb-descriptor-remediation-v2/logs/24-workspace-make-check-final.txt 148295 9b74aa157be1592dba8a5cd23c3e7ab81240a57df7cda600b6d021e1cc47028d
+evidence/usb-descriptor-remediation-v2/logs/25-mutation-harness-v2-run.txt 6673 fd413acce56de41cdc0d4a96c40873bb52469953084865a42660b0b343d0211e
+evidence/usb-descriptor-remediation-v2/logs/26-mutation-mapping-measured.json 3605 5d074d91c813fa2740853d576f45e169997ec5f78c0336564558181136c9be25
+evidence/usb-descriptor-remediation-v2/logs/27-how-the-mapping-was-measured.txt 1177 602ce6a312f2218d9ad025f72b93e88678d912f7cebf4957a26cbedc1a35981f
+evidence/usb-descriptor-remediation-v2/logs/28-pc5ctl-delta-is-docstring-only.txt 251 77d0be55cf7cec9bb8b926aa1b8d699481d7bbaa877603bbcb127f88c93ce295
+evidence/usb-descriptor-remediation-v2/logs/29-usb-suites-and-v1-harness-after-closure.txt 1376 02e69c7ac2bfe774e6eb4ef0cdcdb5e50448601adebeb8203cd3ffd1d1bd768b
+evidence/usb-descriptor-remediation-v2/logs/30-fresh-clone-verification.txt 4603 a23466e55ad8e92288c763adca0aecb803753070db5e1eed6224e8a577aebe4b
+evidence/usb-descriptor-remediation-v2/logs/31-pr-opened.txt 4410 5e84c776076dc13eb8dd2a9b64dac6995962a15970244dd38f14dd9c362813be
+evidence/usb-descriptor-remediation-v2/logs/31a-USB-PR-35-patch-identity.txt 882 36cee4c3d4ef98401bda48255aef7eee774deb201bcbd07b8e03d3343481d5c8
+evidence/usb-descriptor-remediation-v2/logs/32-f6-end-to-end-guard-sensitivity.txt 5203 0719459d4597760ca05a5d28def256baceac83216fd6e8a9cc6a29ea528ee1e4
+evidence/usb-descriptor-remediation-v2/logs/32a-design-doc-f6-sentence.txt 1000 73e34a6de396ba1b04d1c0a29b6605e9cd8385eb8317a82976a788f59577ff6f
+evidence/usb-descriptor-remediation-v2/logs/INDEX.txt 6430 63a2df527582adcc40e15fbfe8754ed98ba61675701f95a7e7bc21f26688ca20
+evidence/usb-descriptor-remediation-v2/measure_mutation_mapping.py 1889 be399dc3703750f75430e9458880b96e30e4ceee5a471eda02fe80f081ec45a2
+evidence/usb-descriptor-remediation-v2/mutation_harness_v2.py 10803 bf4a61b850329abbc80ad5b9626c26d6fa63a058495f539d0bed846fd1029237
+
+=== C — the one path removed from the tracked set (blob retained in history) ===
+untracked: evidence/usb-descriptor-remediation-v2/__pycache__/mutation_harness_v2.cpython-311.pyc  bytes=13725  sha256=2d2362362c87d7fb1b19fcdb517e061ca9a2cfca07fdbe590fdeb6f6f4570235
+blob:      ef603eaf7e75d2d601a7dadcba2b5d3a4ee23fcc
+(deliberately not a `path size hash` triple: the file has no bytes on disk in this tree,
+and a verification recipe must not be handed a line it cannot satisfy — that is how a
+manifest starts looking broken when it is merely honest about an absence)
+Reason: CPython bytecode cache of `mutation_harness_v2.py`; its code section equals
+`marshal(compile(source))` while its header carries the source mtime, so it holds no
+information the tracked source lacks and cannot be re-derived byte-for-byte elsewhere.
+It entered via `git add -f <directory>` despite `.gitignore` lines 17-18; `git cat-file -e
+ef603eaf7e75d2d601a7dadcba2b5d3a4ee23fcc` proves the historical record is intact from a full
+clone, and `tests/test_repository_hygiene.py` is the guard against recurrence.
+
+=== D — drift this branch creates in the historical manifests (reported, not repaired) ===
+  HASHES-PR-TIP.txt  (as merged): bytes=16427 sha256=80f3c26190cb66c4a2815fb611411db86f93fbcf31fff775bcbf87c661f27313  — 109 in-tree records, 0 bytecode
+  CORRECTED-MANIFEST.txt  (as merged): bytes=22410 sha256=58c2ca6f940e351e037ac6514c56753e069433d5cb69c0ada3126ef3b7675c71  — 108 in-tree records
+  both left byte-identical here; after this branch each fails exactly 2 of its records:
+    docs/INSTALLATION.md      main: bytes=9493 sha256=d9dcd22502bcfffb577e7267ab0fce4069cc49c770f83a0418b59d1043eaf814
+                        branch: bytes=11326 sha256=9661c06032f730bd5be6b1d9cdd6cf6bbec8ce6b9b8e9435069d4287655f2885
+    docs/engineering/USB-IDENTITY-BOUNDARY-DESIGN-v1.md
+                        main: bytes=15437 sha256=fafa850662e69604c6b8c84abb07f03ccc248f216f89c08345d390c8678ae4c2
+                      branch: bytes=19886 sha256=af1392c7c6529e611d93acf8e4660bd7a70757572252ce9b46e98004f7d10ccd
+  107/109 and 106/108 still verify.
+
+=== E — the review package's manifest, verified as a control ===
+  evidence/usb-descriptor-independent-review-v1/HASHES-v2.txt  20 records, 20 OK run from
+  the repository root, as its own header directs. Run from inside that directory it reads 0
+  OK — recorded because "the manifest is broken" and "the recipe ran in the wrong
+  directory" look identical in output, and only one of them is a defect.
+

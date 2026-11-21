@@ -33,11 +33,28 @@ for what each one covers):
 
 ```sh
 python3 tools/pc5ctl.py usb --iso build/pc5.iso --device /dev/sdX
-# check the device path twice, then:
+# the same command, with the one flag that means "yes, do it":
 python3 tools/pc5ctl.py usb --iso build/pc5.iso --device /dev/sdX --yes
 ```
 
-Or use a graphical imager (balenaEtcher, Rufus in DD mode, `dd` directly).
+**Do not read the first invocation as a check you then repeat on the pathname.** Running
+`lsblk`/`ls -l /dev/disk/by-id/…` twice, or re-reading the tool's report before you type
+`--yes`, cannot make the write safer, and a document that told you to rely on it would be
+describing the defect this tool was corrected for: between any two looks at a *name*, the
+name can be unlinked, relinked or replaced. The tool therefore never asks the name. It opens
+the device once, takes the identity of the object from the kernel (`fstat` → `major:minor`,
+resolved through `/sys/dev/block`), refuses unless that identity is provably not the root
+storage, and hands **the same descriptor** to `dd` (`pass_fds`, `of=/proc/self/fd/N`), so the
+object written is the object that was decided about — not whatever the path resolves to a
+moment later. `--yes` records your intent; it cannot override a refusal.
+
+What a human still has to get right, and no check can decide for you: that the stick in that
+slot is the stick you mean. The guard protects *this machine's* storage and refuses anything
+it cannot fully describe; it does not know which of your three identical-looking drives holds
+the photographs.
+
+Or use a graphical imager (balenaEtcher, Rufus in DD mode, `dd` directly) — but then none of
+the guards above apply, and neither does the refusal that says `nothing was written`.
 
 **What the image boots from, and what is proven:** one file boots three ways.
 El Torito (a real CD/DVD, or a USB stick the firmware presents as a CD-ROM class
@@ -154,10 +171,15 @@ Writing to a stick is guarded (`pc5ctl usb` re-verifies the checksum, refuses th
 root storage by device number through its whole dm/md closure, and writes only through
 the descriptor it validated), and the medium no longer has to be a CD on a firmware
 level. What remains unproven is the stick on real hardware: the emulator proves the MBR
-and the boot path, not that a particular BIOS likes them, and the 91 `pc5ctl usb` tests
-run against synthetic sysfs trees and temporary regular files, never against a device
-node. Physical-device validation has not occurred, so writing media is not
-deployment-approved. `docs/KNOWN_LIMITATIONS.md`
+and the boot path, not that a particular BIOS likes them, and the 95 `pc5ctl usb` tests
+(`python3 -m unittest discover -s tests -p 'test_pc5ctl_usb*.py'`) run against synthetic
+sysfs trees and temporary regular files, never against a device node. Three mutation
+harnesses show those tests fail when the guards they name are removed — see the README's
+[Writing the image to a USB device](../README.md#writing-the-image-to-a-usb-device) for
+their paths — which is evidence about the code, not about hardware. Physical-device
+validation has not occurred, so writing media is not deployment-approved; the residual
+limits, including the two review findings that remain open, are
+[USB-IDENTITY-BOUNDARY-DESIGN-v1.md](engineering/USB-IDENTITY-BOUNDARY-DESIGN-v1.md) §7 and §8. `docs/KNOWN_LIMITATIONS.md`
 item 5 states the boundary, and `docs/HARDWARE_COMPATIBILITY.md` §6 lists the
 firmware behaviours that could still refuse the medium.
 
