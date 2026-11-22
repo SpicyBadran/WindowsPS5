@@ -1,0 +1,20 @@
+# HASHES.txt - integrity record for evidence/pr37-independent-review-v1
+# generated 2026-11-22T02:15:05Z by the independent review of PR #37
+# base: `main` at 52f682c8435956c8210b3189cad23ebea973d2de (this branch adds files to that revision and changes no other file)
+#
+# Verify from the repository root.  The awk predicate is the one documented in
+# evidence/m17-security-boundary-v1/HASHES.txt, so both manifests are checked the same way:
+#   awk 'NF==3 && length($3)==64 {print $3"  evidence/pr37-independent-review-v1/"$1} evidence/pr37-independent-review-v1/HASHES.txt | sha256sum -c -
+# Every digest below is a full 64 hex characters, so that length guard drops nothing here.
+#
+# <path> <bytes> <sha256>
+CORRECTION-PROPOSAL-20261122.md 11941 068c1477946ad95f30fa0927c14a7d82aa97c79108f8a0bfdc110fb9682ea023
+PR37-INDEPENDENT-REVIEW-20261122.md 41632 723f5b30bfa61e1efe1e642b1821b4d58e118e1d5c967f2a9f9d1a8082bb6262
+#
+# Scope, in numbers measured here:
+#   2 Markdown files, plus HASHES.txt itself and gen_manifest.py, 53573 bytes total;
+#   0 changes to any other path: `git diff --name-only 52f682c84359 HEAD` lists only this directory;
+#   no production path is touched: `git diff --name-only 52f682c84359 HEAD -- tools boot kernel psm ci` is empty;
+#   the reviewed branch is unchanged: refs/heads/docs/m17-security-boundary-analysis ->
+#   d09949226c39052fa04827c2c9b440129735a312, four commits on top of the base above, read from
+#   `git ls-remote` at 2026-11-22T01:44:20Z and again at 02:09Z, not from any local clone.
