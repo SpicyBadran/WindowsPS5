@@ -293,11 +293,37 @@ class CommandContractTest(unittest.TestCase):
         self.assertNotIn("sync", self.recipe("presentation-check"))
 
     def test_make_check_uses_the_read_only_target(self):
-        prerequisites = [line for line in self.makefile.splitlines() if line.startswith("check:")]
-        self.assertTrue(prerequisites)
-        line = prerequisites[0]
-        self.assertIn("presentation-check", line)
-        self.assertNotIn("presentation ", line + " ", "check must not regenerate figures")
+        """`check` runs the read-only gate and never the writer.
+
+        Asserted across the whole rule -- prerequisite line plus recipe.  It used to
+        look at the `check:` line alone, which stopped being the right place to look
+        when the legs moved into the recipe so that a failed gate could not pre-empt
+        the suite (tests/test_make_check_contract.py).  A one-line check would now be
+        satisfied by a rule that runs the gate nowhere at all.
+        """
+        prereqs = [line for line in self.makefile.splitlines()
+                   if line.startswith("check:")]
+        self.assertTrue(prereqs)
+        rule = prereqs[0] + "\n" + self.recipe("check")
+        self.assertIn("presentation-check", rule,
+                      "check must run the read-only presentation gate")
+        self.assertNotIn("presentation.py sync", rule,
+                         "check must not regenerate figures as a side effect")
+        # The legs live in a shell loop now, so look at the loop's own list: the
+        # writer must not be one of them.  (Checking only that the *string*
+        # `$(MAKE) presentation` is absent would pass even if the gate had been
+        # dropped from the loop entirely, which is the failure being guarded.)
+        # `; do`, not ` do`: the latter silently matched the space before
+        # "docs-check" and reported the loop as holding two gates.
+        legs = re.search(r"for target in ([^;]+); do", rule)
+        self.assertTrue(legs, "check no longer runs its gates through a loop; "
+                              "update this test to read the new shape rather than "
+                              "letting the guard go quietly stale")
+        names = legs.group(1).split()
+        self.assertEqual(names, ["unit", "psm", "docs-check", "citations-check",
+                                 "presentation-check", "brand-check"])
+        self.assertNotIn("presentation", names,
+                         "check must not invoke the writing target")
 
     def test_every_documented_presentation_command_is_phony(self):
         phony = [line for line in self.makefile.splitlines() if line.startswith(".PHONY:")][0]

@@ -48,7 +48,7 @@ KERNEL_CFLAGS := -m32 -std=gnu11 -O2 -Wall -Wextra -Wno-unused-parameter \
                  -DPC5_BUILD_ID='"$(BUILD_ID)"' \
                  -DPC5_BUILD_DATE='"$(BUILD_DATE)"'
 
-.PHONY: ovmf-setup ovmf-check all iso uefi kernel64 uefi64 stubtest64 check docs-check citations-check citation-refs presentation-check presentation validation record-validation test boot-test stubtest ovmf-test verify roadmap clean distclean info unit metadata release-assets psm psm-render manifest hw-record brand brand-check
+.PHONY: ovmf-setup ovmf-check emulator-probe all uefi kernel64 uefi64 stubtest64 check docs-check citations-check citation-refs presentation-check presentation validation record-validation test boot-test stubtest ovmf-test verify roadmap clean distclean info unit metadata release-assets psm psm-render manifest hw-record brand brand-check
 
 all: iso
 
@@ -307,8 +307,43 @@ psm:
 psm-render:
 	python3 -m psm.render --write
 
-check: unit psm docs-check citations-check presentation-check brand-check
-	python3 -m unittest discover -s tests -p 'test_*.py' -v
+# `make check` is the one command that answers "is the tree sound?", so it has to run
+# everything it claims to run -- in an order where a failure says what failed.
+#
+# Listing the documentation and contract gates as prerequisites looked equivalent and
+# was not.  Make treats a failed prerequisite as an early exit: when `docs-check`
+# tripped over a missing evidence file or a roadmap milestone, make stopped there, the
+# suite never started, and the exit code described the gate rather than the code.  A
+# green-looking `make check` could therefore mean "no test ran", and a red one could
+# mean nothing about the tests at all.
+#
+# Inside a single recipe the shell stops at the first failure too, so chaining with
+# `&&` would repeat the same mistake.  Each leg's status is therefore captured, the
+# suite goes first because it is what people are asking about, and the first failing
+# leg is named.  A failing gate still blocks `check`; it just no longer silences the
+# suite.
+#
+# What this cannot fix: `make` exits 2 for any failed command, so neither the old form
+# nor this one can hand a caller the suite's own status -- `make check` reports 2 and
+# the log has to say what failed.  Measured, both forms, same stub project, in
+# tests/test_make_check_contract.py.  Anything that needs the precise code (CI, a
+# script) runs the leg directly, e.g. `python3 -m unittest discover -s tests
+# -p 'test_*.py'`; `check` exists so that a human is never left without the suite.
+check:
+	@status=0; failed=""; \
+	echo "==> suite"; \
+	python3 -m unittest discover -s tests -p 'test_*.py' -v || { \
+		status=$$?; failed=suite; }; \
+	for target in unit psm docs-check citations-check presentation-check brand-check; do \
+		[ -z "$$failed" ] || break; \
+		echo "==> make $$target"; \
+		$(MAKE) --no-print-directory $$target || { status=$$?; failed=$$target; }; \
+	done; \
+	if [ -n "$$failed" ]; then \
+		echo "make check FAILED in '$$failed' (exit $$status); every later leg was skipped"; \
+		exit $$status; \
+	fi; \
+	echo "make check: suite and all gates passed"
 
 # The README's figures and status table are generated from the milestone graph.
 # `presentation` writes; `presentation-check` reads and is what `make check` runs, so a
@@ -423,6 +458,14 @@ ovmf-test: $(ISO) $(BUILD)/efi.img
 # into the tree: firmware stays where the distribution put it.
 ovmf-setup:
 	sh tools/ovmf_setup.sh
+
+# What the installed emulator can and cannot prove about exceptions and the task
+# register.  It is a measurement, not a gate, so it always exits 0: run it when a
+# documentation sentence about `ltr`, IST or `tr=not-loaded` needs re-checking, or when
+# a newer Unicorn might have grown the ability.  See docs/evidence/ below for the run
+# this line of reasoning rests on.
+emulator-probe:
+	@python3 tools/emulator_capabilities.py $(EMULATOR_PROBE_ARGS)
 
 ovmf-check:
 	sh tools/ovmf_setup.sh --check

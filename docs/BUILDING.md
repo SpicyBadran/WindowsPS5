@@ -33,7 +33,8 @@ distribution tool, or network access.
 make info        # version, build id, timestamp, source list
 make             # build/pc5.iso, build/pc5.iso.sha256, build/build-info.json
 make unit        # host-side kernel unit tests (165 checks)
-make check       # unit tests + python test suite
+make check       # python test suite FIRST, then the unit/contract/documentation gates --
+                 # a broken gate cannot hide the suite, and the failing leg is named
 make citations-check  # every commit cited by the evidence documents resolves here
 make citation-refs    # fetch refs/pull/*/head: needed only for citations that point at an
                       # open pull-request head, or in a filtered/partial clone
@@ -45,6 +46,7 @@ make stubtest    # execute the UEFI loader against a stub firmware (58 checks)
 make ovmf-test   # boot the ISO under genuine OVMF; exit 3 = NOT TESTED
 make ovmf-setup  # provision QEMU + TianoCore OVMF from the distribution
 make ovmf-check  # verify that provisioning, without installing anything
+make emulator-probe  # what the installed emulator can and cannot prove (always exit 0)
 make metadata    # add provenance to build/build-info.json
 make release-assets  # stage pc5.iso, pc5.iso.sha256, build-info.json
 make clean

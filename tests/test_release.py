@@ -240,6 +240,43 @@ class CiLayoutTests(unittest.TestCase):
         with open(os.path.join(ROOT, ".gitignore"), encoding="utf-8") as fh:
             self.assertIn(".venv/", fh.read())
 
+    def test_the_64bit_boot_gate_is_a_step_and_not_an_intention(self):
+        """The pipeline must execute the long-mode path, or say it cannot.
+
+        Until this test existed the build job ran `make stubtest` -- the 32-bit
+        loader against the stub firmware -- and nothing else that touches
+        `boot/uefi64` or `kernel64`.  The host suite imports those modules, and
+        `docs/ARCHITECTURE.md` describes the boot, so the pipeline could have gone
+        green on a tree whose 64-bit entry point had never been executed.  That is
+        a gap of the same shape as the one the OVMF job exists to close, one layer
+        down, so it gets the same treatment: a step that runs the gate and a log
+        that proves it ran, plus the emulator's own capability record so that the
+        meaning of `tr=not-loaded` travels with the artefacts.
+        """
+        candidates = [
+            os.path.join(ROOT, ".github", "workflows", "build.yml"),
+            os.path.join(ROOT, "ci", "build.yml"),
+        ]
+        found = [p for p in candidates if os.path.exists(p)]
+        self.assertTrue(found)
+        text = open(found[0], encoding="utf-8").read()
+        self.assertIn("make stubtest64", text,
+                      "the 64-bit boot gate is not executed by the pipeline")
+        self.assertIn("build/logs/stubtest64.log", text,
+                      "the 64-bit gate's log is not kept, so its absence would be "
+                      "indistinguishable from a skipped step")
+        self.assertIn("make emulator-probe", text,
+                      "the run should record what the emulator could and could not "
+                      "prove, not leave that to be inferred from the docs")
+        # And the firmware job must keep its discipline: NOT TESTED is a failure,
+        # which in a shell step means `set -eu` and no `|| true` on the harness.
+        ovmf = text[text.index("Boot it under OVMF"):]
+        self.assertIn("set -eu", ovmf)
+        self.assertIn('make ovmf-test OVMF_ARGS="--secure-boot"', ovmf)
+        self.assertNotIn("make ovmf-test || true", ovmf,
+                         "swallowing the harness status would turn a NOT TESTED run "
+                         "into a green one")
+
     def test_readme_explains_activation_when_not_installed(self):
         active = os.path.join(ROOT, ".github", "workflows", "build.yml")
         if os.path.exists(active):

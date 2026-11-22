@@ -141,3 +141,26 @@ repository, then re-run the activation:
 
 No shell command available in this environment can grant that permission; it is
 an installation-level authorization held by the repository owner.
+
+## Attempts, dated
+
+The instructions above have been carried out and refused three times. Recording the
+refusals here, rather than only in a chat log, is what keeps "the pipeline is dormant
+because of a permission, not because it was forgotten" checkable later.
+
+| When | Against | Command | Result |
+|---|---|---|---|
+| 2026-11-16 | `main` `237725d` | `git mv ci/build.yml .github/workflows/build.yml && git push` | `remote rejected … without workflows permission` |
+| 2026-11-16 | `main` `a266936` | same | same |
+| 2026-11-22 | `arena/b81a0441-pc5` off `aeca706e` | same, after `mkdir -p .github/workflows` (`git mv` does not create the parent) | `! [remote rejected] HEAD -> arena/b81a0441-pc5 (refusing to allow a GitHub App to create or update workflow `.github/workflows/build.yml` without workflows permission)` |
+
+The third attempt was reverted (`git reset --mixed HEAD~1`, `ci/build.yml` restored, the
+new directory removed) and the tree was verified clean against `aeca706e` afterwards; the
+commit it created no longer exists locally, which is the point of quoting the rejection
+verbatim above.
+
+Meanwhile `ci/build.yml` itself is freely editable, and it now runs the gates that were
+missing from it: `make stubtest64`, so the long-mode boot is executed, and
+`make emulator-probe --json`, so the run carries its own record of what the emulator could
+not prove.  `tests/test_release.py::CiLayoutTests` pins both, because a step that is
+merely intended is a step that will be dropped.

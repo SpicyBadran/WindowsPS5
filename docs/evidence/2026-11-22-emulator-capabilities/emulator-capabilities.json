@@ -1,0 +1,117 @@
+{
+  "measurements": {
+    "exception-delivery": {
+      "continued": false,
+      "error": "Invalid instruction (UC_ERR_INSN_INVALID)",
+      "expected_vector": 6,
+      "outcome": "faulted",
+      "supports": false,
+      "vectors": []
+    },
+    "gdt-selfcheck": {
+      "descriptor": {},
+      "error": null,
+      "gdtr_base": "0x0",
+      "gdtr_limit": 0,
+      "note": "UNVERIFIED: this probe's own lgdt/sgdt pair left GDTR reading zero, so the ltr results below cannot be attributed to the descriptor -- the engine's task-register path is all they show.  The kernel's own boot line reads GDTR back correctly (gdtr == gdt), so the readback works where it matters; see docs/evidence/ for both.",
+      "outcome": "returned",
+      "supports": false
+    },
+    "int3-delivery": {
+      "continued": true,
+      "error": null,
+      "expected_vector": 3,
+      "outcome": "returned",
+      "supports": true,
+      "vectors": [
+        3
+      ]
+    },
+    "int7-delivery": {
+      "continued": true,
+      "error": null,
+      "expected_vector": 7,
+      "outcome": "returned",
+      "supports": true,
+      "vectors": [
+        7
+      ]
+    },
+    "ltr-no-gdt": {
+      "continued": false,
+      "error": null,
+      "expected_vector": null,
+      "outcome": "returned",
+      "supports": false,
+      "tr_after": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "vectors": [
+        13,
+        8
+      ]
+    },
+    "ltr-over-seeded-tr": {
+      "error": null,
+      "outcome": "returned",
+      "supports": true,
+      "tr_after": [
+        40,
+        1130496,
+        103,
+        137
+      ],
+      "tr_before": [
+        40,
+        1130496,
+        103,
+        137
+      ]
+    },
+    "ltr-with-gdt": {
+      "continued": false,
+      "error": null,
+      "expected_vector": null,
+      "outcome": "returned",
+      "supports": false,
+      "tr_after": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "vectors": [
+        13,
+        8
+      ]
+    },
+    "sgdt-without-lgdt": {
+      "error": null,
+      "gdtr_base": "0x0",
+      "gdtr_limit": 0,
+      "outcome": "returned",
+      "supports": true
+    },
+    "tr-api": {
+      "read_back": [
+        40,
+        1130496,
+        103,
+        137
+      ],
+      "supports": true,
+      "write": "tuple accepted",
+      "written": [
+        40,
+        1130496,
+        103,
+        137
+      ]
+    }
+  },
+  "notes": [],
+  "unicorn": "2.1.4"
+}

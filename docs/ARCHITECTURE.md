@@ -513,6 +513,23 @@ that keeps the frames, a descriptor whose high base bytes land in the wrong fiel
 fails if any of them survives.  Loading TR on real firmware stays open, and is recorded
 as open: nothing here demonstrates a double fault running on its own stack.
 
+**That limit is now a command rather than a paragraph.** `make emulator-probe`
+(`tools/emulator_capabilities.py`) measures, on whatever emulator is installed, the four
+things the sentence depends on, and it is worth reading before repeating it.  On Unicorn
+2.1.4 the answers are: software interrupts *are* modelled (`int 3` and `int 7` reach an
+interrupt hook with their own vectors and the guest continues) while processor exceptions
+*are not* (`ud2` reaches nothing and the run stops with `UC_ERR_INSN_INVALID`); TR is
+writable and readable by the host as a 4-tuple of selector, base, limit and flags, which is
+why a host-seeded value must never be reported as activation; and a guest `ltr` never
+populates TR -- it takes `#GP` then `#DF` against a table the probe could not verify, or
+leaves a seeded TR unchanged.  The same `ud2` injected into `report_tss()` on the real boot
+path stops the harness at the faulting RIP with `PC5-64-EXCEPTION` never printed, in a boot
+that otherwise passes, so this is the engine's exception path and not PC5's IDT, TSS or
+harness.  Consequence, unchanged in substance and now measurable: the IST entries are
+configured and gated, dispatch is not observed, and the criterion belongs to OVMF or
+hardware.  The run, the reasoning and the encoding bug the self-check caught are in
+[evidence/2026-11-22-emulator-capabilities/](evidence/2026-11-22-emulator-capabilities/README.md).
+
 ### 7.6 CPU features and the SVM ladder
 
 `kernel64/cpu64.c` reports vendor, family/model/stepping, physical and virtual

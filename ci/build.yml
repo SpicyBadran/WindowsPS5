@@ -106,6 +106,18 @@ jobs:
           export PATH="$PWD/.venv/bin:$PATH"
           python3 -c "import unicorn; print('unicorn', unicorn.__version__)"
           make stubtest | tee build/logs/stubtest.log
+          # The 64-bit path, which is the one the loader actually hands off to.
+          # `tests/test_tss64.py` and `tests/test_boot64_stub.py` are already inside the
+          # host suite above, but neither executes the image: `stubtest64` does, and
+          # before this line the pipeline could go green with the long-mode boot
+          # unexecuted.  It is a separate gate because it needs separate artefacts
+          # (boot/uefi64, kernel64) and reports its own JSON.
+          make stubtest64 | tee build/logs/stubtest64.log
+          # And the record of what this emulator can and cannot prove, so that the
+          # interpretation of `tr=not-loaded` in the run above is attached to the run
+          # rather than to a document.  The probe exits 0 either way by design.
+          make emulator-probe EMULATOR_PROBE_ARGS=--json \
+            | tee build/logs/emulator-capabilities.json
 
       - name: Boot the image in the emulator
         run: |

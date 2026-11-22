@@ -1,0 +1,23 @@
+emulator capabilities (Unicorn 2.1.4)
+------------------------------------------------------------------------------
+  int3-delivery      yes  software `int 3` reaches the hook with vector 3, and runs on
+                        hook saw [3], guest continued=True
+  int7-delivery      yes  a second vector is reported as itself, not as a constant
+                        hook saw [7], guest continued=True
+  exception-delivery no   processor exception 6 reaches the hook, and runs on
+                        hook saw [], guest continued=False  (Invalid instruction (UC_ERR_INSN_INVALID))
+  tr-api             yes  the host can write and read back a full task-register image
+                        wrote [40, 1130496, 103, 137], read [40, 1130496, 103, 137]
+  gdt-selfcheck      no   the probe can see its own installed GDT (self-check)
+                        GDTR limit=0 base=0x0  UNVERIFIED: this probe's own lgdt/sgdt pair left GDTR reading zero, so th
+                        e ltr results below cannot be attributed to the descriptor -- the engine's task-register path is
+                        all they show.  The kernel's own boot line reads GDTR back correctly (gdtr == gdt), so the readb
+                        ack works where it matters; see docs/evidence/ for both.
+  sgdt-without-lgdt  yes  what `sgdt` reports with no `lgdt` beforehand
+                        GDTR limit=0 base=0x0  
+  ltr-no-gdt         no   ltr runs with no descriptor loaded; vectors 13/8 are #GP/#DF
+  ltr-with-gdt       no   ltr loads TR once a real TSS descriptor is visible
+                        returned; TR now [0, 0, 0, 0]
+  ltr-over-seeded-tr yes  ltr leaves a host-seeded TR alone and does not fault
+------------------------------------------------------------------------------
+Verdict: software interrupts are modelled and processor exceptions are not, and `ltr` never populates TR -- it either runs against a table this probe could not verify (GDTR reads zero; #GP then #DF) or leaves a host-seeded TR untouched.  An IST stack switch is therefore not observable here: the kernel's TSS report stays at tr=not-loaded, and double-fault/NMI on an IST stack is an OVMF-or-hardware criterion.  Software-interrupt delivery is the control that shows the limit is the engine's exception path, not a mis-installed hook.  Re-run this file before repeating any of those sentences -- on a machine where the answers differ, they are wrong.
