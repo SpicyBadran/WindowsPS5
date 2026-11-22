@@ -1,0 +1,60 @@
+Artifact identities — M17 security-boundary workstream, branch `docs/m17-security-boundary-analysis`.
+
+Generated 2026-11-22T01:34:07Z by `evidence/m17-security-boundary-v1/gen_manifest.py`, from the working tree, after every file recorded here
+was written and before the commit that carries this file.
+
+Base: `main` at `52f682c8435956c8210b3189cad23ebea973d2de` (PR #35's merge commit). This branch adds no change to any production
+path: the diff below is documentation, one test module, this evidence directory, and a `notes`
+string inside `docs/architecture/roadmap.json`.
+
+Verify from the repository root (mawk has no {64} intervals, so the length test is written this way):
+    awk 'NF==3 && length($3)==64 {print $3"  "$1}' evidence/m17-security-boundary-v1/HASHES.txt | sha256sum -c -
+
+Scope, in numbers this script measured: 7 added paths, 1 modified paths,
+and the complete contents of `evidence/m17-security-boundary-v1/` (5 files, this manifest excluded because it
+cannot record its own bytes).
+
+The files of this directory appear twice — once as a path this branch adds, once as a member of
+the package — so the record count exceeds the distinct-path count on purpose: section A is the
+branch delta and section C is the package. Both are things a reader may want to check separately.
+
+=== A — paths this branch adds, against main ===
+docs/playstation/SECURITY_BOUNDARY.md 40385 7023b0852fe1652246c15ce6b33c88b553c6c25aa7c2b86c03055c8ad1782464
+evidence/m17-security-boundary-v1/AUDIT-PR36-20261122.md 13826 a56e4e43427053b130f22102162beec5f6f475bb78bf768d8177c508f1c35f91
+evidence/m17-security-boundary-v1/FALSIFIER-SOURCE-EXTRACTS-20261122.md 10273 63d74a802b7cea3ae70ecafe2b96b9b39660d5d208135788ea9442160b59e691
+evidence/m17-security-boundary-v1/SCOPE-AND-DEPENDENCY-ASSESSMENT-20261122.md 6965 64fab3448e69b3728dd797c66fd18d5910e33cd29f813aa5a0da5376f7aadee3
+evidence/m17-security-boundary-v1/VERIFICATION-20261122.log 15648 abdc710d2324285ea47eccc8a5d37614215eb42d3136e187224066da127192a5
+evidence/m17-security-boundary-v1/gen_manifest.py 7310 7fb007f5bd815da4a452f187a568a7b3d8fdc31ec642d34b154e379b7154dbb8
+tests/test_milestone_deliverables.py 8438 2f2c5ab5fd53fc00c27f19b0cd60c0c035432a6ae10e021ba92f5b60d61f2c1c
+
+=== B — paths this branch modifies (new identity; old identity is section D) ===
+docs/architecture/roadmap.json 50950 8dc292ffe4f79bc9d80c21be45775a50271eb195c88ccd992b0c143afcbf035b
+
+=== C — the complete evidence directory of this workstream, as committed ===
+evidence/m17-security-boundary-v1/AUDIT-PR36-20261122.md 13826 a56e4e43427053b130f22102162beec5f6f475bb78bf768d8177c508f1c35f91
+evidence/m17-security-boundary-v1/FALSIFIER-SOURCE-EXTRACTS-20261122.md 10273 63d74a802b7cea3ae70ecafe2b96b9b39660d5d208135788ea9442160b59e691
+evidence/m17-security-boundary-v1/SCOPE-AND-DEPENDENCY-ASSESSMENT-20261122.md 6965 64fab3448e69b3728dd797c66fd18d5910e33cd29f813aa5a0da5376f7aadee3
+evidence/m17-security-boundary-v1/VERIFICATION-20261122.log 15648 abdc710d2324285ea47eccc8a5d37614215eb42d3136e187224066da127192a5
+evidence/m17-security-boundary-v1/gen_manifest.py 7310 7fb007f5bd815da4a452f187a568a7b3d8fdc31ec642d34b154e379b7154dbb8
+
+=== D — the one pre-existing file this branch edits, old identity and new ===
+# docs/architecture/roadmap.json: at 52f682c84359 bytes=50124 sha256=433148fe2142161cd7ede82b89bc8cec50d98c4697db19c79dd5c2b8f6a3462a  ->  now bytes=50950 sha256=8dc292ffe4f79bc9d80c21be45775a50271eb195c88ccd992b0c143afcbf035b
+
+=== E — assertions that have no bytes to hash ===
+# no production path is touched: `git diff --name-only 52f682c84359 HEAD -- tools boot kernel psm src firmware`
+#   is empty (measured; see VERIFICATION log section 8);
+# bytecode: 0 generated files inside `evidence/m17-security-boundary-v1/` (none allowed, so none recorded), and
+#   `git ls-files | grep '\.pyc$'` returns 1 path(s) in this tree. That number is
+#   inherited, not caused: `main` at the base commit still tracks
+#   evidence/usb-descriptor-remediation-v2/__pycache__/mutation_harness_v2.cpython-311.pyc, and
+#   PR #36 removes it. This branch deliberately does not duplicate that removal — it would collide
+#   with an open PR whose scope it is. Whichever lands second keeps the other's result.
+# the `notes` edit to roadmap.json changes no `state` field; M17, M18, M19, M20, M21 remain blocked,
+#   which is asserted by tests/test_milestone_deliverables.py and by the presentation gate's
+#   `13 status rows match roadmap.json` check.
+
+=== F — historical manifests this workstream did not touch, and how they read here ===
+# evidence/usb-descriptor-remediation-v2/HASHES-PR-TIP.txt and CORRECTED-MANIFEST.txt describe main
+#   at PR #35's tip. On THIS branch they verify completely, because this branch does not edit the
+#   two documents PR #36 edits. On PR #36's branch they each report exactly 2 failures. Both
+#   readings are correct, and neither file was regenerated here.

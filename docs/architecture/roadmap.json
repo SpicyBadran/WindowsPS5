@@ -1206,6 +1206,7 @@
         "docs/playstation/BOOT_FEASIBILITY.md"
       ],
       "blocker": "no lawful trust path is known: the console's boot chain is anchored in Sony-specific silicon and fuses, and PC5 implements no circumvention (ADR-007, ADR-022). Until a lawful path exists this milestone can proceed only as analysis",
+      "notes": "The analysis half is published: `docs/playstation/SECURITY_BOUNDARY.md` (2026-11-22) answers all four acceptance items — a 13-step authentication inventory with source classes and confidence, the three feasibility paths and the three falsifiers of `BOOT_FEASIBILITY.md` §3/§4 assessed against evidence retrieved that day (none observed, with the emulator landscape recorded as materially closer than §3B implies), and a per-step platform-model verdict across four layers. The state is **unchanged**: the blocker is the absence of a lawful trust path and a lawful input, not the absence of analysis, and a boundary is not crossed by describing it. `tests/test_milestone_deliverables.py` now requires this milestone's named document to exist, which is the check that was missing when the deliverable was.",
       "experimental": true
     },
     {

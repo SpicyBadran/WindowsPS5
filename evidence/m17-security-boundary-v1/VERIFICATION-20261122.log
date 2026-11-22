@@ -1,0 +1,236 @@
+# M17 workstream — verification transcript, 2026-11-22
+
+Every line below is an actual run in this environment, in the order it happened. Exit statuses are
+the process status, never the status of a later pipeline stage: where a command was filtered, the
+filter is shown as a separate step and the raw status is recorded from the unfiltered run.
+
+Environment, stated because three of the numbers below depend on it:
+    sandbox clock at the first measurement: Sun 2026-11-22T00:57:06Z (`date -u`)
+    python 3.11, no virtualenv, `TMPDIR=/tmp` exported for every make target (the docs gate clones
+      into a temp dir and inherits TMPDIR; the default sandbox tmp is not writable for it)
+    `unicorn` NOT installed here -> the emulator-backed loader suites skip; that is the documented
+      unprovisioned shape of this gate, not a pass, and it is why "skipped=109" appears below
+    no block device exists and `mknod` is denied -> no physical test was possible or attempted
+    network egress is limited to github.com, codeload, api.github.com, npmjs, pypi -> the `located`
+      external rows of SECURITY_BOUNDARY.md §9 were read as retrieved excerpts, not fetched pages
+
+## 1. Starting state (Phase 0, independent reads)
+
+    $ git ls-remote https://github.com/SpicyBadran/PC5.git | grep -E 'refs/heads/(main|docs/usb…)$'
+      main    -> 52f682c8435956c8210b3189cad23ebea973d2de
+      pr36    -> aed099d4fbf73c57c294ae017c48801a38b7512d   (refs/heads/docs/usb-post-merge-reconciliation)
+    $ gh api repos/SpicyBadran/PC5/pulls/36 --jq state,merged,mergeable,mergeable_state,changed_files
+      open, merged=false, mergeable=true, clean, 6 files +649/-12, base=52f682c8…
+    $ gh api repos/SpicyBadran/PC5/actions/workflows --jq total_count -> 0
+    $ gh api repos/SpicyBadran/PC5/pulls/36/reviews --jq 'length'    -> 0
+    $ gh api repos/SpicyBadran/PC5/commits/aed099d4…/check-runs --jq total_count -> 0
+    $ gh api repos/SpicyBadran/PC5/branches/main/protection -> HTTP 403 (not readable by this token)
+    $ gh api repos/SpicyBadran/PC5/pulls/31 -> open, head ac17c5d3…, updated 2026-11-20T16:03:02Z
+    $ gh api repos/SpicyBadran/PC5/pulls/34 -> open, head 547ebd5c…, updated 2026-11-20T17:07:58Z
+    $ git merge-base --is-ancestor ac17c5d3… 52f682c8… ; echo $?   -> 1   (not merged)
+    $ git merge-base --is-ancestor 547ebd5c… 52f682c8… ; echo $?   -> 1   (not merged)
+
+## 2. Worktree used for the deliverable
+
+    $ git clone -q --no-hardlinks -b main https://github.com/SpicyBadran/PC5.git /home/user/pc5-m17work
+    $ git reset -q --hard 52f682c8435956c8210b3189cad23ebea973d2de
+    $ git checkout -q -b docs/m17-security-boundary-analysis
+    $ git rev-parse HEAD   -> 52f682c8435956c8210b3189cad23ebea973d2de   (base: main, NOT PR #36)
+    $ git merge-base --is-ancestor aed099d4… HEAD ; echo $?  -> 1  (PR #36 is not an ancestor)
+    $ git ls-files | wc -l -> 323 tracked files at the base commit
+
+## 3. Baseline gate at the base commit, before any edit (measured, for the delta arithmetic)
+
+Run in a separate clone of `main` checked out at 52f682c8:
+
+    $ TMPDIR=/tmp make check          exit 0
+      Ran 929 tests in 61.656s
+      OK (skipped=109)
+      DOCS OK: 67 Markdown files, 34 make targets, links, anchors and commands resolve
+
+## 4. The focused new suite, on the branch
+
+    $ TMPDIR=/tmp python3 -m unittest tests.test_milestone_deliverables          exit 0
+      Ran 4 tests in 0.003s
+      OK
+
+## 5. Negative control, measured against the tree that lacks the deliverable
+
+A worktree at the base commit, with only the new test file copied into it — no repository file was
+moved, renamed or deleted anywhere in this workstream:
+
+    $ git worktree add -q /tmp/negctl 52f682c8435956c8210b3189cad23ebea973d2de
+    $ cp tests/test_milestone_deliverables.py /tmp/negctl/tests/
+    $ cd /tmp/negctl && TMPDIR=/tmp python3 -m unittest tests.test_milestone_deliverables
+      exit status 1
+      FAIL: test_every_obliged_document_deliverable_exists
+        AssertionError: Lists differ: [('M17', 'docs/playstation/SECURITY_BOUNDARY.md')] != []
+      ERROR: test_m17_names_the_analysis_deliverable_and_it_is_substantive
+        FileNotFoundError: … /tmp/negctl/docs/playstation/SECURITY_BOUNDARY.md
+      Ran 4 tests in 0.002s
+      FAILED (failures=1, errors=1)
+
+So the check is not vacuous: it reports the exact gap it was written for, on the tree where the gap
+exists, and stays silent about the milestones that are legitimately still missing their artifacts
+(M18's loader, M19's boot evidence, M2d's kernel/usb/, the M1 record template's peers) — those four
+were not reported, which is the scope property case 4 of the test pins.
+
+    $ cd /home/user/pc5-m17work && TMPDIR=/tmp python3 -m unittest tests.test_milestone_deliverables
+      exit 0, Ran 4 tests … OK
+    $ git worktree remove --force /tmp/negctl
+    $ git worktree list | wc -l -> 1
+    $ git status --porcelain -> roadmap.json modified; three untracked paths; nothing else
+
+## 6. Full gate on the branch, on the final tree (the numbers the PR body quotes)
+
+    $ TMPDIR=/tmp make docs-check          exit 0
+      DOCS OK: 71 Markdown files, 34 make targets, links, anchors and commands resolve
+    $ TMPDIR=/tmp make check                 exit 0
+      PASSED: 165 checks, 0 failures
+      PSM conformance: 261/261 checks passed
+      DOCS OK: 71 Markdown files, 34 make targets, links, anchors and commands resolve
+      CITATIONS OK: 258 commit reference(s) resolve across 11 documents
+      PRESENTATION OK: 6 figures and 5 blocks current, 13 status rows match roadmap.json,
+                       11 validation record(s) read, links and alt text resolve
+      BRAND OK: 11 assets current, no text elements, no external references
+      Ran 933 tests in 60.602s
+      OK (skipped=109)
+
+    933 = 929 (the base commit) + 4 (the new suite). No other test moved: the roadmap edit adds a
+      `notes` string only, and `13 status rows match roadmap.json` still passes, which is the gate
+      that would notice a `state` change. skipped=109 is the unprovisioned figure, identical to the
+      base commit's — nothing here added or removed a skip.
+
+    Arithmetic of the docs count, because a count in prose is exactly what §8.3 of the deliverable
+    complains about: 67 Markdown files at the base commit + SECURITY_BOUNDARY.md + the three .md
+    files in this directory = 71. The same two commands run at an intermediate tree, before the
+    AUDIT file and this log existed, printed 70 and `Ran 933 tests in 61.857s`; both figures are
+    kept here rather than tidied, so a reader who sees 70 in a draft knows which tree produced it.
+
+    $ TMPDIR=/tmp python3 -m unittest discover -s tests -p 'test_architecture*.py'   exit 0
+      Ran 53 tests in 0.050s
+      OK
+    $ TMPDIR=/tmp python3 -m unittest discover -s tests -p 'test_product_identity*.py'  exit 0
+      Ran 19 tests in 0.039s
+      OK
+      (this is the gate that scans every docs/**.md for forbidden claims; the new document was
+      written against `product.forbidden_claims` and passes without exemption)
+    $ TMPDIR=/tmp python3 -m unittest discover -s tests -p 'test_psm*.py'            exit 0
+      Ran 56 tests in 0.063s
+      OK        (registry + conformance + document + mutations; the psm suites are 56, not 71)
+    $ TMPDIR=/tmp python3 tools/docs_check.py --list    exit 0
+      DOCS OK: 71 Markdown files, 34 make targets, links, anchors and commands resolve
+      (71, matching §6's final run; an earlier intermediate run of the same command printed 70,
+      before the AUDIT file and this log were written - the reason both figures appear in §6)
+    $ TMPDIR=/tmp python3 tools/commit_citations.py     exit 0
+      CITATIONS OK: 258 commit reference(s) resolve across 11 documents
+
+## 7. Boundary assertions, re-measured as the deliverable claims them
+
+    $ grep -rln 'decrypt\|rsa_verify\|ecdsa\|aes_\|shacrypt' tools/*.py kernel/*.c
+      tools/firmware.py  tools/pc5ctl.py  tools/presentation.py
+    $ grep -nE 'decrypt' those three files
+      firmware.py:13  "It does not decrypt firmware, extract keys, patch signatures, or bypass any"
+      firmware.py:166 "The PFS image is AES-XTS encrypted; PC5 does not decrypt it."
+      firmware.py:219 "PC5 firmware analysis (no decryption)"
+      pc5ctl.py:8     "firmware analysis (no decryption)"
+      presentation.py:686 "| analysed, decrypted or executed | **no**, in any sense |"
+      -> all five are refusal statements, not implementations (the claim in SECURITY_BOUNDARY.md §6)
+    $ grep -rn '^import \(Crypto\|cryptodome\)\|^from \(Crypto\|cryptography\)' tools/ psm/ kernel/
+      (no output)  -> no crypto library is imported by any of those trees
+    $ ls psm/ | tr '\n' ' '
+      __init__.py audio.py audit.py conformance.py contract.py cpu.py graphics.py interrupts.py
+      memory.py psm.py registry.py render.py services.py storage.py usb.py
+      -> no security module, as the contract's §3.7 states; and
+    $ TMPDIR=/tmp python3 -m unittest \
+        tests.test_psm_registry.RegistryRulesTest.test_security_is_restricted_and_has_no_interface
+      Ran 1 test in 0.000s / OK                                   exit 0
+      (defined at tests/test_psm_registry.py line 82, class RegistryRulesTest; one of that module's
+      30 cases, all OK)
+    $ grep -c '\*\*[A-F]\.' docs/playstation/BOOT_FEASIBILITY.md  -> 3   (three §3 paths, not four)
+
+## 8. Nothing was executed, loaded or written
+
+    $ git diff --name-only 52f682c8435956c8210b3189cad23ebea973d2de HEAD -- tools boot kernel psm src firmware
+      (no output)
+    $ ls /dev/sd* /dev/nvme*  -> No such file or directory (no block device of any kind)
+    $ mknod /tmp/testnode b 8 0 -> mknod: Operation not permitted
+      -> nothing was written because nothing could be: no device node exists and none can be made
+    $ ls -l PS5UPDATE.PUP -> 135 bytes        (the pointer, as ADR-022 requires)
+    $ TMPDIR=/tmp python3 tools/firmware.py analyze --input PS5UPDATE.PUP
+      size 135 bytes
+      sha256 6e8f5a459551316397f1946cce4d540a56c0b790854c2c0d94c442ca86e73b42
+      kind unidentified - No documented signature matched.
+      entropy mean 4.924 over 1 MiB windows
+      -> the LFS POINTER was analysed, as always;
+      the 1,423,697,408-byte payload was not fetched, not from LFS and not from any other host
+    No Sony system software, no key material, no decrypted artifact and no console firmware exists in
+    or was added to this workspace. No genuine target system software was loaded or executed, at any
+    point, in any form. No physical-hardware validation was performed. No emulator was launched for
+    this workstream (and `unicorn` is absent here, which is why the 109 skips exist).
+
+## 9. Manifest
+
+`HASHES.txt` in this directory records the identity of every file this workstream adds or modifies,
+plus the whole of this evidence directory, generated by `gen_manifest.py` (committed here, run from
+the repository root) after the last write to any recorded file. Verified with the recipe its own
+header states; the result is recorded in the PR's fresh-clone comment, out-of-band, because a
+manifest cannot describe the head that contains it.
+
+## 10. Second pass, 2026-11-22T01:33:56Z — the same task re-issued, so the state was re-read rather than remembered
+
+The workstream was reported complete; the instruction arrived again. Rather than repeat the work or
+trust the prior report, the state was re-read and one substantive question was chased: the task asks
+for "all four 'would have to be true' paths from §3", and the first pass had recorded §3 as holding
+three. Measured again, in this clone:
+
+    $ grep -n '\bD\.' docs/playstation/BOOT_FEASIBILITY.md      -> no match
+    $ grep -c '\*\*[A-F]\.' docs/playstation/BOOT_FEASIBILITY.md -> 3
+    $ sed -n '105,135p' docs/PS5_SYSTEM_SOFTWARE_TARGET.md
+      -> "## 4. What running the genuine system software would require"
+         "Nine requirements, each classified." — and the two bullets after the table:
+         requirements 1-9 are PC5 work; "requirement 2 and requirement 3 are **not** PC5 work.
+         They are external preconditions."
+    $ grep -n '^## 5' docs/FIRMWARE_ANALYSIS.md && sed -n '80,105p' docs/FIRMWARE_ANALYSIS.md
+      -> "## 5. What would have to be true to execute genuine PS5 system software"
+         "In order of dependency:" 1 verified loader path, 2 SoC-level device emulation,
+         3 storage and file-system implementation for the package format, 4 a legal basis.  FOUR.
+
+So the number in the instruction is real but belongs to a different document: four is the count of
+`FIRMWARE_ANALYSIS.md` §5's ordered requirements, three is the count of `BOOT_FEASIBILITY.md` §3's
+paths, nine is the count of `PS5_SYSTEM_SOFTWARE_TARGET.md` §4's classified requirements. That is
+not a defect to report — it is a mapping the deliverable was better off carrying, so §3.1 now holds
+all three decompositions with an explicit row-by-row correspondence and labels the correspondence as
+assessment; and §8.1 was rewritten from "the count is wrong, say three" to "the count is real but
+mis-cited — the minimal fix is a citation fix". The nine-row table is also the strongest in-repo
+corroboration available for the two inventory rows that carry the blocker (its requirement 2 = S3
+lawful authenticated input, class restricted; its requirement 3 = S4 trust anchor, Sony-specific
+silicon), and §2.1 cites it for exactly that, with the caveat that the classification is the
+project's own statement about scope rather than a measurement of the world.
+
+Remote state re-read at the start of the pass, before any edit:
+
+    refs/heads/main                                  -> 52f682c8435956c8210b3189cad23ebea973d2de
+    refs/heads/docs/usb-post-merge-reconciliation    -> aed099d4fbf73c57c294ae017c48801a38b7512d   (#36, untouched)
+    refs/heads/docs/m17-security-boundary-analysis   -> c118e67a3806cc1518e036f387991c05796f1a74   (#37, this PR)
+    refs/heads/feature/ovmf-test64                   -> ac17c5d3afa6fa3ca779c012c6aef36b64751b55   (#31, untouched)
+    refs/heads/m2a/interrupt-foundation               -> 547ebd5cff04b87330d95807a90795d9ac4d66d0   (#34, untouched)
+    #35 closed merged=true merge_commit_sha=52f682c8… head=80fc8615… 111 files +57469/-39
+    #36 open draft=false merged=false base=52f682c8… 6 files +649/-12 mergeable=true/clean
+    #37 open draft=true  merged=false base=52f682c8… 9 files +1436/-0  mergeable=true/clean
+
+Gate re-run in this clone after the §3.1/§2.1/§8.1 edits and the manifest regeneration:
+
+    $ TMPDIR=/tmp make docs-check       exit 0   DOCS OK: 71 Markdown files, 34 make targets, links, anchors and commands resolve
+    $ TMPDIR=/tmp python3 -m unittest tests.test_milestone_deliverables
+                                          exit 0   Ran 4 tests in 0.005s / OK
+    $ TMPDIR=/tmp make check            exit 0   Ran 933 tests in 60.901s / OK (skipped=109)
+                                                  PASSED: 165 checks, 0 failures · PSM 261/261 ·
+                                                  CITATIONS OK: 258 · PRESENTATION OK (13 status rows
+                                                  match roadmap.json) · BRAND OK
+    $ HASHES.txt regenerated, then verified from the repository root
+                                          exit 0   13 records, 13 OK
+
+Nothing about the milestone graph changed in this pass: `M17` still `blocked`, `M18`–`M21` still
+`blocked`, no acceptance criterion altered, no production path touched, no device written, no system
+software loaded or executed, no CI available to report.
